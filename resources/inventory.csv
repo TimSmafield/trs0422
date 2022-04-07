@@ -1,0 +1,5 @@
+toolCode,toolType,brand,inStock
+CHNS,Chainsaw,Stihl,true
+LADW,Ladder,Werner,true
+JAKD,Jackhammer,DeWalt,true
+JAKR,Jackhammer,Ridgid,true
