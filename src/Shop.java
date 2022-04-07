@@ -1,11 +1,13 @@
-import com.opencsv.bean.CsvToBeanBuilder;
-
 import java.io.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-
+/**
+ *
+ * This is a driver for RentalAggreement
+ *
+ */
 public class Shop {
 
     private static final String COMMA_DELIMITER = ",";
@@ -18,6 +20,8 @@ public class Shop {
         LocalDate rentalDate = LocalDate.parse(args[2], formatter);
         double discountPercent = Double.parseDouble(args[3]);
 
+
+        // get display properties and rates
         ResourceBundle displayProperties = ResourceBundle.getBundle("display");
         ResourceBundle rates = ResourceBundle.getBundle("rate");
 
@@ -28,6 +32,12 @@ public class Shop {
         rentalAgreement.checkout(inventoryMap.get(toolCode), rentalDays, rentalDate, discountPercent);
     }
 
+
+    /**
+     *
+     *
+     * @return map of tool code to tools in inventory
+     */
     static Map<String, Tool> getInventory(){
 
         Map map = new HashMap();
