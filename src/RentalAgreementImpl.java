@@ -1,5 +1,4 @@
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -26,6 +25,7 @@ public class RentalAgreementImpl implements RentalAgreement {
   ResourceBundle displayProperties;
   Locale locale;
 
+  // rounding half up the nearest penny.
   static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_UP;
   static final int SCALE = 2;
 
@@ -33,6 +33,7 @@ public class RentalAgreementImpl implements RentalAgreement {
   @Override
   public RentAgreementDetails checkout(Tool tool, int rentalDays, LocalDate checkOutDate, double discountPercent) {
 
+    // validate inputs
     if (tool == null ) {
       throw new NullPointerException("Tool object is null.");
     }
@@ -49,11 +50,16 @@ public class RentalAgreementImpl implements RentalAgreement {
       throw new IllegalArgumentException("Discount percent must be between 0 and 1");
     }
 
+    // set the inputs into values
     RentAgreementDetails rentAgreementDetails = new RentAgreementDetails();
     rentAgreementDetails.setTool(tool);
     rentAgreementDetails.setRentalDays(rentalDays);
     rentAgreementDetails.setCheckOutDate(checkOutDate);
     rentAgreementDetails.setDiscountPercent(discountPercent);
+
+    /*
+     Using BigDecimal as this logic deals with round and currency values.
+     */
 
     BigDecimal dailyRate = new BigDecimal(Double.parseDouble(rateMap.getString(tool.getToolType().name()))).setScale(SCALE, ROUNDING_MODE);
     rentAgreementDetails.setDailyRentalCharge(dailyRate);
@@ -72,6 +78,12 @@ public class RentalAgreementImpl implements RentalAgreement {
     return rentAgreementDetails;
   }
 
+  /**
+   * Prints values that are populated in rentAgreementDetails formatted by properties files to allow for
+   *  customization without recompiling code.
+   *
+   * @param rentAgreementDetails
+   */
   @Override
   public void print(RentAgreementDetails rentAgreementDetails) {
 
@@ -99,13 +111,24 @@ public class RentalAgreementImpl implements RentalAgreement {
 
   protected int calculateChargeDays( LocalDate  checkout, LocalDate  dueDate, Tool tool ) {
 
-    List<LocalDate> dates = Stream.iterate(checkout, date -> date.plusDays(1))
+
+    // creates a set of dates after filtering dates base on filter generated from a toolType's restrictions for weekends and hoildays.
+    Set<LocalDate> dates = Stream.iterate(checkout, date -> date.plusDays(1))
             .limit(ChronoUnit.DAYS.between(checkout, dueDate)).filter(createDateFilter(tool, checkout,dueDate))
-            .collect(Collectors.toList());
+            .collect(Collectors.toSet());
 
     return dates.size();
   }
 
+
+  /**
+   * Creates a filter of dates based on Tool's charge restriction for weekends and hoildays
+   *
+   * @param tool
+   * @param checkout
+   * @param dueDate
+   * @return
+   */
   protected Predicate<LocalDate> createDateFilter(Tool tool, LocalDate  checkout, LocalDate dueDate) {
 
     Predicate<LocalDate> predicate = date -> isWeekend(date) ? tool.getToolType().getChargeWeekends() : tool.getToolType().getChargeWeekdays();
@@ -120,6 +143,13 @@ public class RentalAgreementImpl implements RentalAgreement {
     return predicate;
   }
 
+  /**
+   *  Finds the observed hoildays for passed year value
+   *  current only looks for Labor Day and American Independence day
+   *
+   * @param year
+   * @return set of hoildays
+   */
   protected Set<LocalDate> setHolidays(int year) {
 
     Set<LocalDate> holidays = new HashSet<>();
@@ -136,6 +166,12 @@ public class RentalAgreementImpl implements RentalAgreement {
     return holidays;
   }
 
+  /**
+   * checks if it is a weekend
+   *
+   * @param date
+   * @return
+   */
   protected boolean isWeekend (LocalDate date) {
 
      return date.get(ChronoField.DAY_OF_WEEK) > DayOfWeek.FRIDAY.getValue();
